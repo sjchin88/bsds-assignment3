@@ -7,6 +7,14 @@
   <groupId>org.cs6650</groupId>
   <artifactId>consumers</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <mongodb-driver-sync.version>4.8.2</mongodb-driver-sync.version>
+    <mongodb-crypt.version>1.7.1</mongodb-crypt.version>
+    <logback-classic.version>1.2.11</logback-classic.version>
+  </properties>
   <dependencies>
     <!-- https://mvnrepository.com/artifact/com.rabbitmq/amqp-client -->
     <dependency>
@@ -40,12 +48,13 @@
       <version>5.9.2</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>io.lettuce</groupId>
+      <artifactId>lettuce-core</artifactId>
+      <version>6.2.3.RELEASE</version>
+    </dependency>
   </dependencies>
-  <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+
   <build>
     <plugins>
       <plugin>

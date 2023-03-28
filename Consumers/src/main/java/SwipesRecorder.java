@@ -1,5 +1,8 @@
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,35 +37,19 @@ public class SwipesRecorder extends Recorder{
     }
     ConnectionFactory factory = new ConnectionFactory();
     factory.setHost(serverAddr);
-    factory.setUsername(ADMIN_NAME);
-    factory.setPassword(ADMIN_PASS);
+    //factory.setUsername(ADMIN_NAME);
+    //factory.setPassword(ADMIN_PASS);
     Connection connection = factory.newConnection();
-    ConcurrentHashMap<Integer, Integer> likeDB = new ConcurrentHashMap<>();
-    ConcurrentHashMap<Integer, Integer> dislikeDB = new ConcurrentHashMap<>();
+
+    //Set up Redis connection
+    RedisClient redisClient = RedisClient.create(REDIS_HOST);
+    StatefulRedisConnection<String, String> redisConnection = redisClient.connect();
+    //Create asynchronous API
+    //RedisAsyncCommands<String, String> redisAsyncCommands = redisConnection.async();
     for(int i = 0; i < numThread; i++){
-      Thread thread = new Thread(new SwipeThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, likeDB, dislikeDB));
+      Thread thread = new Thread(new SwipeCountThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, redisConnection));
       thread.start();
     }
 
-    // Code for checking and debug
-    /*System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
-    while (true){
-      Thread.sleep(100_000);
-      printDb(likeDB);
-      printDb(dislikeDB);
-    }*/
-  }
-
-  /**
-   * Static method to print the content of the concurrent hashmap, use for checking and debug
-   * @param db ConcurrentHashMap<Integer, Integer>
-   */
-  public static void printDb(ConcurrentHashMap<Integer, Integer> db){
-    int total = 0;
-    for(Entry<Integer, Integer> entry: db.entrySet()) {
-      System.out.println(entry);
-      total += entry.getValue();
-    }
-    System.out.println("Total equals:" + total);
   }
 }

@@ -1,5 +1,8 @@
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
+import io.lettuce.core.RedisFuture;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -14,7 +17,6 @@ import java.util.logging.Logger;
  * record the swiper and swipee into the hashmap
  */
 public class LikeThread extends ConsumerThread{
-  private ConcurrentHashMap<Integer, List<Integer>> swipeDB;
 
   /**
    * Create new swipe recording thread based on given arguments
@@ -23,13 +25,12 @@ public class LikeThread extends ConsumerThread{
    * @param exchangeType  Target Exchange type, either "direct", "topic" or "fanout"
    * @param queueName   Name of target Queue
    * @param bindingKeys   binding keys
-   * @param swipeDB   ConcurrentHashMap used to record the swipee being liked by the swiper
+   * @param redisConn  an instance of Redis Command async() api
    * @throws IOException
    */
   public LikeThread(Connection connection, String exchangeName,
-      String exchangeType, String queueName, String[] bindingKeys, ConcurrentHashMap<Integer, List<Integer>> swipeDB) throws IOException {
-    super(connection, exchangeName, exchangeType, queueName, bindingKeys);
-    this.swipeDB = swipeDB;
+      String exchangeType, String queueName, String[] bindingKeys, StatefulRedisConnection<String, String> redisConn) throws IOException {
+    super(connection, exchangeName, exchangeType, queueName, bindingKeys, redisConn);
   }
 
   /**
@@ -39,12 +40,12 @@ public class LikeThread extends ConsumerThread{
   public void run() {
 
     DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-      ByteBuffer buffer = ByteBuffer.wrap(delivery.getBody());
-      int swiper = buffer.getInt();
-      int swipee = buffer.getInt();
-      this.swipeDB.computeIfAbsent(swiper, k -> Collections.synchronizedList(new ArrayList<>(100))).add(swipee);
-      // Debug code
-      // System.out.println(" [x] Received from " + delivery.getEnvelope().getRoutingKey() + " swiperId:" + swiper + " swipeeId:" + swipee);
+      ///ByteBuffer buffer = ByteBuffer.wrap(delivery.getBody());
+      //int swiper = buffer.getInt();
+      //int swipee = buffer.getInt();
+      String[] messages = new String(delivery.getBody(), "UTF-8").split(":");
+      String swiperId = "Swiper:"+messages[0];
+      RedisFuture<Long> set = this.redisCommand.sadd(swiperId, messages[1]);
     };
     try {
       this.channel.basicConsume(this.queueName, true, deliverCallback, consumerTag -> { });

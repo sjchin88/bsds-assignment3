@@ -1,5 +1,8 @@
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,36 +42,18 @@ public class LikesRecorder extends Recorder{
 
     ConnectionFactory factory = new ConnectionFactory();
     factory.setHost(serverAddr);
-    factory.setUsername(ADMIN_NAME);
-    factory.setPassword(ADMIN_PASS);
-    Connection connection = factory.newConnection();
-    ConcurrentHashMap<Integer, List<Integer>> swipeDB = new ConcurrentHashMap<>();
+    //factory.setUsername(ADMIN_NAME);
+    //factory.setPassword(ADMIN_PASS);
+    Connection rabbitConnection = factory.newConnection();
+
+    //Set up Redis connection
+    RedisClient redisClient = RedisClient.create(REDIS_HOST);
+    StatefulRedisConnection<String, String> redisConnection = redisClient.connect();
+    //Create asynchronous API
+    //RedisAsyncCommands<String, String> redisAsyncCommands = redisConnection.async();
     for(int i = 0; i < numThread; i++){
-      Thread thread = new Thread(new LikeThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, swipeDB));
+      Thread thread = new Thread(new LikeThread(rabbitConnection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, redisConnection));
       thread.start();
     }
-    // Code for checking and debug
- /*   System.out.println(" [*] Waiting for messages. To exit press CTRL+C");
-    while (true){
-      Thread.sleep(100_000);
-      printDb(swipeDB);
-    }*/
-  }
-
-  /**
-   * Static method to print the content of the concurrent hashmap, use for checking and debug
-   * @param db ConcurrentHashMap<Integer, List<Integer>>
-   */
-  public static void printDb(ConcurrentHashMap<Integer, List<Integer>> db){
-    int total = 0;
-    for(Entry<Integer, List<Integer>> entry: db.entrySet()) {
-      System.out.print(entry.getKey() + " likes: ");
-      for(Integer swipee: entry.getValue()){
-        System.out.print(swipee + ", ");
-        total ++;
-      }
-      System.out.println();
-    }
-    System.out.println("Total equals:" + total);
   }
 }

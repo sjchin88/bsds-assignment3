@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="LikeRecorded_ori" type="Application" factoryName="Application">
+  <configuration default="false" name="SwipesRecorder" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="SwipesRecorder" />
-    <module name="Consumers" />
+    <module name="consumers" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

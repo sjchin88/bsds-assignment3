@@ -1,6 +1,7 @@
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.DeliverCallback;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
 
 /**
@@ -9,6 +10,8 @@ import java.io.IOException;
 public class ConsumerThread implements Runnable{
   protected Channel channel;
   protected String queueName;
+  protected RedisAsyncCommands<String, String> redisCommand;
+  //protected StatefulRedisConnection<String, String> redisConn;
 
   /**
    * Create new consumerThread based on given arguments
@@ -19,9 +22,10 @@ public class ConsumerThread implements Runnable{
    * @param bindingKeys   binding keys
    */
   public ConsumerThread(Connection connection, String exchangeName, String exchangeType,
-      String queueName, String[] bindingKeys) throws IOException {
+      String queueName, String[] bindingKeys, StatefulRedisConnection<String, String> redisConn) throws IOException {
     this.channel = setChannel(connection, exchangeName, exchangeType, queueName, bindingKeys);
     this.queueName = queueName;
+    this.redisCommand = redisConn.async();
   }
 
   /**
@@ -46,7 +50,7 @@ public class ConsumerThread implements Runnable{
     for(String bindKey:bindingKeys){
       channel.queueBind(queueName, exchangeName, bindKey);
     }
-    channel.basicQos(1);
+    channel.basicQos(2);
     return channel;
   }
 

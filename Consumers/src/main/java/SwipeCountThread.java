@@ -1,7 +1,9 @@
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
+import io.lettuce.core.RedisFuture;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,10 +11,7 @@ import java.util.logging.Logger;
 /**
  * Like recording thread extends the Consumer Thread
  */
-public class SwipeThread extends ConsumerThread{
-  private ConcurrentHashMap<Integer, Integer> likeDB;
-  private ConcurrentHashMap<Integer, Integer> dislikeDB;
-
+public class SwipeCountThread extends ConsumerThread{
   /**
    * Create a new thread to record the like and dislike
    * @param connection  RabbitMQ connection
@@ -20,17 +19,15 @@ public class SwipeThread extends ConsumerThread{
    * @param exchangeType  Target Exchange type, either "direct", "topic" or "fanout"
    * @param queueName   Name of target Queue
    * @param bindingKeys   binding keys
-   * @param likeDB    ConcurrentHashMap used to record the number of likes given by the swiper
-   * @param dislikeDB ConcurrentHashMap used to record the number of dislikes given by the swiper
+   * @param redisConn  an instance of Redis Command async() api
    * @throws IOException
    */
-  public SwipeThread(Connection connection, String exchangeName,
+  public SwipeCountThread(Connection connection, String exchangeName,
       String exchangeType, String queueName, String[] bindingKeys,
-      ConcurrentHashMap<Integer, Integer> likeDB, ConcurrentHashMap<Integer, Integer> dislikeDB)
+      StatefulRedisConnection<String, String> redisConn
+      )
       throws IOException {
-    super(connection, exchangeName, exchangeType, queueName, bindingKeys);
-    this.likeDB = likeDB;
-    this.dislikeDB = dislikeDB;
+    super(connection, exchangeName, exchangeType, queueName, bindingKeys, redisConn);
   }
 
   /**
@@ -40,12 +37,18 @@ public class SwipeThread extends ConsumerThread{
   public void run() {
 
     DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-      ByteBuffer buffer = ByteBuffer.wrap(delivery.getBody());
-      int swiper = buffer.getInt();
+      //ByteBuffer buffer = ByteBuffer.wrap(delivery.getBody());
+      //int swiper = buffer.getInt();
+      String[] messages = new String(delivery.getBody(), "UTF-8").split(":");
+
+      //System.out.println(messages[0] + " " + messages[1]);
+      //System.out.println("Swiper" + swiper);
       if(delivery.getEnvelope().getRoutingKey().equals("right")){
-        likeDB.compute(swiper,(key, val) -> (val == null) ? 1: val + 1);
+        String swiperId = "Likes:"+messages[0];
+        RedisFuture<Long> future = this.redisCommand.incr(swiperId);
       } else {
-        dislikeDB.compute(swiper,(key, val) -> (val == null) ? 1: val + 1);
+        String swiperId = "DisLikes:"+messages[0];
+        RedisFuture<Long> future = this.redisCommand.incr(swiperId);
       }
       // Debug code
       // System.out.println(" [x] Received from " + delivery.getEnvelope().getRoutingKey() + " swiperId:" + swiper);

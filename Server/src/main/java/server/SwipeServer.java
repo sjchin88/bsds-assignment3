@@ -79,10 +79,10 @@ public class SwipeServer extends HttpServlet {
   /**
    * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
    */
-  //private static String SERVER_ADDR = "localhost";
-  private static String SERVER_ADDR = "44.234.204.104";
-  private static String RABBIT_USER = "csj";
-  private static String RABBIT_PASS = "Gu33ssm3";
+  private static String SERVER_ADDR = "localhost";
+  //private static String SERVER_ADDR = "44.234.204.104";
+  //private static String RABBIT_USER = "csj";
+  //private static String RABBIT_PASS = "Gu33ssm3";
   private ConnectionFactory rabbitFactory;
   private RabbitMQChannelPool channelPool;
   private Gson gson;
@@ -97,8 +97,8 @@ public class SwipeServer extends HttpServlet {
     // Create new connection to the rabbit MQ
     this.rabbitFactory = new ConnectionFactory();
     this.rabbitFactory.setHost(SERVER_ADDR);
-    this.rabbitFactory.setUsername(RABBIT_USER);
-    this.rabbitFactory.setPassword(RABBIT_PASS);
+    //this.rabbitFactory.setUsername(RABBIT_USER);
+    //this.rabbitFactory.setPassword(RABBIT_PASS);
     Connection rabbitMQConn;
     try {
       rabbitMQConn = this.rabbitFactory.newConnection();
@@ -200,14 +200,15 @@ public class SwipeServer extends HttpServlet {
       }
 
       // prepare the message to RabbitMQ and required info
-      ByteBuffer buffer = ByteBuffer.allocate(8);
-      buffer.putInt(swiperId);
-      buffer.putInt(swipeeId);
+      //ByteBuffer buffer = ByteBuffer.allocate(8);
+      //buffer.putInt(swiperId);
+      //buffer.putInt(swipeeId);
+      String messages = swipeDetail.getSwiper() + ":"+swipeDetail.getSwipee();
       String swipeDirection = request.getPathInfo().substring(1);
 
       // borrow channel and publish the message
       Channel channel = this.channelPool.borrowObject();
-      channel.basicPublish(EXCHANGE_NAME, swipeDirection, null, buffer.array());
+      channel.basicPublish(EXCHANGE_NAME, swipeDirection, null, messages.getBytes());
       this.channelPool.returnObject(channel);
 
       // Send the response back to client
