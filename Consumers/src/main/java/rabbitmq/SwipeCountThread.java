@@ -1,10 +1,11 @@
+package rabbitmq;
+
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.DeliverCallback;
 import io.lettuce.core.RedisFuture;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -12,6 +13,8 @@ import java.util.logging.Logger;
  * Like recording thread extends the Consumer Thread
  */
 public class SwipeCountThread extends ConsumerThread{
+  private BlockingQueue<String> buffer;
+
   /**
    * Create a new thread to record the like and dislike
    * @param connection  RabbitMQ connection
@@ -19,15 +22,16 @@ public class SwipeCountThread extends ConsumerThread{
    * @param exchangeType  Target Exchange type, either "direct", "topic" or "fanout"
    * @param queueName   Name of target Queue
    * @param bindingKeys   binding keys
-   * @param redisConn  an instance of Redis Command async() api
+   * @param
    * @throws IOException
    */
   public SwipeCountThread(Connection connection, String exchangeName,
       String exchangeType, String queueName, String[] bindingKeys,
-      StatefulRedisConnection<String, String> redisConn
+      BlockingQueue<String> buffer
       )
       throws IOException {
-    super(connection, exchangeName, exchangeType, queueName, bindingKeys, redisConn);
+    super(connection, exchangeName, exchangeType, queueName, bindingKeys);
+    this.buffer = buffer;
   }
 
   /**
@@ -37,26 +41,26 @@ public class SwipeCountThread extends ConsumerThread{
   public void run() {
 
     DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-      //ByteBuffer buffer = ByteBuffer.wrap(delivery.getBody());
-      //int swiper = buffer.getInt();
-      String[] messages = new String(delivery.getBody(), "UTF-8").split(":");
 
-      //System.out.println(messages[0] + " " + messages[1]);
-      //System.out.println("Swiper" + swiper);
-      if(delivery.getEnvelope().getRoutingKey().equals("right")){
-        String swiperId = "Likes:"+messages[0];
-        RedisFuture<Long> future = this.redisCommand.incr(swiperId);
-      } else {
-        String swiperId = "DisLikes:"+messages[0];
-        RedisFuture<Long> future = this.redisCommand.incr(swiperId);
+      String[] messages = new String(delivery.getBody(), "UTF-8").split(":");
+      try {
+        String swiperId="";
+        if (delivery.getEnvelope().getRoutingKey().equals("right")) {
+          swiperId = "Likes:" + messages[0];
+        } else {
+          swiperId = "DisLikes:" + messages[0];
+        }
+        this.buffer.put(swiperId);
       }
-      // Debug code
-      // System.out.println(" [x] Received from " + delivery.getEnvelope().getRoutingKey() + " swiperId:" + swiper);
+      catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+
     };
     try {
       this.channel.basicConsume(this.queueName, true, deliverCallback, consumerTag -> { });
     } catch (IOException e) {
-      Logger.getLogger(LikeThread.class.getName()).log(Level.WARNING, "channel subscription fail", e);
+      Logger.getLogger(SwipeRecThread.class.getName()).log(Level.WARNING, "channel subscription fail", e);
     }
   }
 }

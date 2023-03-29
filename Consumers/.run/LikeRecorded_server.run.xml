@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="LikeRecorded_server" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="SwipesRecorder" />
+    <option name="MAIN_CLASS_NAME" value="SwipeCountRecorder" />
     <module name="Consumers" />
     <option name="PROGRAM_PARAMETERS" value="20 local" />
     <method v="2">
