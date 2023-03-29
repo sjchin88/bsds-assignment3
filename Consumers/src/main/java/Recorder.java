@@ -14,7 +14,7 @@ public class Recorder {
   /**
    * Default number of thread
    */
-  protected static final int NUM_THREAD = 10;
+  protected static final int NUM_THREAD = 20;
   /**
    * Default server address
    */

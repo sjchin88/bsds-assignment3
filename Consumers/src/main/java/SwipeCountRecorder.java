@@ -2,14 +2,16 @@ import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import io.lettuce.core.RedisClient;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.async.RedisAsyncCommands;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import rabbitmq.SwipeCountThread;
+import redis.RedisSwipeCountThread;
+import redis.RedisSwipeRecThread;
 
 /**
  * Driver to record the likes and dislikes count from the swiper
  */
-public class SwipesRecorder extends Recorder{
+public class SwipeCountRecorder extends Recorder{
   /**
    * Default queue name
    */
@@ -41,15 +43,14 @@ public class SwipesRecorder extends Recorder{
     //factory.setPassword(ADMIN_PASS);
     Connection connection = factory.newConnection();
 
-    //Set up Redis connection
-    RedisClient redisClient = RedisClient.create(REDIS_HOST);
-    StatefulRedisConnection<String, String> redisConnection = redisClient.connect();
-    //Create asynchronous API
-    //RedisAsyncCommands<String, String> redisAsyncCommands = redisConnection.async();
+    BlockingQueue<String> buffer = new LinkedBlockingDeque<>(500_000);
     for(int i = 0; i < numThread; i++){
-      Thread thread = new Thread(new SwipeCountThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, redisConnection));
+      Thread thread = new Thread(new SwipeCountThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, buffer));
       thread.start();
     }
-
+    for(int i = 0; i < 3; i++){
+      Thread redisThread = new Thread(new RedisSwipeCountThread(buffer));
+      redisThread.start();
+    }
   }
 }

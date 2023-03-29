@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="SwipesRecorder" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="SwipesRecorder" />
+  <configuration default="false" name="SwipeCountRecorder" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="SwipeCountRecorder" />
     <module name="consumers" />
     <method v="2">
       <option name="Make" enabled="true" />
