@@ -31,11 +31,17 @@ public class SwipeRecRecorder extends Recorder{
     } catch (Exception e){
       numThread = NUM_THREAD;
     }
+    int numReddisThread;
+    try{
+      numReddisThread = Integer.valueOf(argv[1]);
+    } catch (Exception e){
+      numReddisThread = NUM_REDDIS_THREAD;
+    }
     String serverAddr;
     try{
-      serverAddr = argv[1];
+      serverAddr = argv[2];
     } catch (Exception e){
-      serverAddr = SERVER_ADDR;
+      serverAddr = RABBIT_HOST;
     }
 
     ConnectionFactory factory = new ConnectionFactory();
@@ -43,12 +49,12 @@ public class SwipeRecRecorder extends Recorder{
     //factory.setUsername(ADMIN_NAME);
     //factory.setPassword(ADMIN_PASS);
     Connection rabbitConnection = factory.newConnection();
-    BlockingQueue<String[]> buffer = new LinkedBlockingDeque<>(500_000);
+    BlockingQueue<String[]> buffer = new LinkedBlockingDeque<>(BUFFER_SIZE);
     for(int i = 0; i < numThread; i++){
       Thread thread = new Thread(new SwipeRecThread(rabbitConnection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, buffer));
       thread.start();
     }
-    for(int i = 0; i < 3; i++){
+    for(int i = 0; i < numReddisThread; i++){
       Thread redisThread = new Thread(new RedisSwipeRecThread(buffer));
       redisThread.start();
     }

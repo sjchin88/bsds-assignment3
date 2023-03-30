@@ -1,12 +1,21 @@
 package server;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
-import java.io.BufferedReader;
+import com.rabbitmq.client.MessageProperties;
+import io.lettuce.core.RedisClient;
+import io.lettuce.core.RedisFuture;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -15,7 +24,6 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.pool2.impl.GenericObjectPool;
 
 /**
  * Server class to handle traffic to /swipe path
@@ -31,6 +39,8 @@ public class SwipeServer extends HttpServlet {
    * Valid URL
    */
   private static final String URL_RIGHT = "/right";
+  private static final String URL_MATCH = "^/matches/\\d+";
+  private static final String URL_STAT = "^/stats/\\d+";
 
   /**
    * Response Message for valid swipe
@@ -79,13 +89,21 @@ public class SwipeServer extends HttpServlet {
   /**
    * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
    */
-  private static String SERVER_ADDR = "localhost";
-  //private static String SERVER_ADDR = "44.234.204.104";
+  private static String RABBIT_HOST = "localhost";
+  //private static String SERVER_ADDR = "35.165.32.0";
   //private static String RABBIT_USER = "csj";
   //private static String RABBIT_PASS = "Gu33ssm3";
   private ConnectionFactory rabbitFactory;
   private RabbitMQChannelPool channelPool;
   private Gson gson;
+  //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
+  private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
+  private static final String PREFIX_LIKES_CNT = "Likes:";
+  private static final String PREFIX_DISLIKES_CNT = "Dislikes:";
+  private static final String PREFIX_SWIPE_REC = "Swiper:";
+  private StatefulRedisConnection<String, String> redisConnection;
+  private RedisAsyncCommands<String, String> redisCommand;
+  private RedisClient redisClient;
 
   /**
    * Set up the server class , creating the RabbitMQ channel pool
@@ -96,7 +114,7 @@ public class SwipeServer extends HttpServlet {
     super.init();
     // Create new connection to the rabbit MQ
     this.rabbitFactory = new ConnectionFactory();
-    this.rabbitFactory.setHost(SERVER_ADDR);
+    this.rabbitFactory.setHost(RABBIT_HOST);
     //this.rabbitFactory.setUsername(RABBIT_USER);
     //this.rabbitFactory.setPassword(RABBIT_PASS);
     Connection rabbitMQConn;
@@ -113,6 +131,12 @@ public class SwipeServer extends HttpServlet {
 
     // Initialized other instance variable
     this.gson = new Gson();
+
+    //Initialized the Redis connection
+    this.redisClient = RedisClient.create(REDIS_HOST);
+    this.redisConnection = this.redisClient.connect();
+    //Create asynchronous API
+    this.redisCommand = this.redisConnection.async();
   }
 
   /**
@@ -126,9 +150,85 @@ public class SwipeServer extends HttpServlet {
   @Override
   protected void doGet(HttpServletRequest request, HttpServletResponse response)
       throws ServletException, IOException {
-    response.setContentType("text/plain");
-    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-    response.getWriter().write("no get method");
+    response.setContentType("application/json");
+    String urlPath = request.getPathInfo();
+
+    // check for valid url
+    if (isGetUrlValid(urlPath, response)) {
+      if(urlPath.matches(URL_MATCH)){
+        this.getPotentialMatches(response, urlPath.substring(9));
+      } else if (urlPath.matches(URL_STAT)){
+        this.getStat(response, urlPath.substring(9));
+      }
+    }
+  }
+
+
+  /**
+   * Retrieve
+   * @param response
+   * @param swiperId
+   */
+  private void getPotentialMatches(HttpServletResponse response, String swiperId) {
+    try{
+      RedisFuture<List<String>> swipeeSet = this.redisCommand.srandmember(PREFIX_SWIPE_REC+swiperId, 100);
+      JsonObject jsonObject = new JsonObject();
+      JsonArray jsonArray = this.gson.toJsonTree(swipeeSet.get()).getAsJsonArray();
+      jsonObject.add("matchList", jsonArray);
+      response.setStatus(HttpServletResponse.SC_OK);
+      response.getOutputStream().print(this.gson.toJson(jsonObject));
+      response.getOutputStream().flush();
+    } catch (IOException | ExecutionException | InterruptedException e) {
+      Logger.getLogger("Get From Redis").log(Level.WARNING, "Error processing request", e);
+    }
+  }
+
+  private void getStat(HttpServletResponse response, String swiperId) throws IOException {
+    try{
+      System.out.println(swiperId);
+      RedisFuture<String> likeCount = this.redisCommand.get(PREFIX_LIKES_CNT+swiperId);
+      RedisFuture<String> dislikeCount = this.redisCommand.get(PREFIX_DISLIKES_CNT+swiperId);
+      //System.out.println(dislikeCount.get());
+      JsonObject jsonObject = new JsonObject();
+      int likes = likeCount.get() != null ? Integer.valueOf(likeCount.get()) : 0;
+      int dislikes = dislikeCount.get() != null ? Integer.valueOf(dislikeCount.get()) : 0;
+      jsonObject.addProperty("numLikes", likes );
+      jsonObject.addProperty("numDislikes",dislikes);
+      response.setStatus(HttpServletResponse.SC_OK);
+      response.getOutputStream().print(this.gson.toJson(jsonObject));
+      response.getOutputStream().flush();
+    } catch (IOException | ExecutionException | InterruptedException e) {
+      Logger.getLogger("Get From Redis").log(Level.WARNING, "Error processing request", e);
+    }
+  }
+
+  /**
+   * Check if the urlPath is valid for Get call
+   *
+   * @param urlPath
+   * @param response
+   * @return boolean
+   */
+  private boolean isGetUrlValid(String urlPath, HttpServletResponse response) throws IOException {
+    if (urlPath == null || urlPath.isEmpty()) {
+      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
+      return false;
+    }
+    int swiperId = -1;
+    try{
+      if(urlPath.matches(URL_MATCH)){
+        swiperId = Integer.valueOf(urlPath.substring(9));
+      } else if(urlPath.matches(URL_STAT)){
+        swiperId = Integer.valueOf(urlPath.substring(7));
+      }
+    } catch (Exception e){
+      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
+      return false;
+    }
+    if(!validateSwiper(swiperId)) {
+      this.replyMsg(ERROR_USER, HttpServletResponse.SC_NOT_FOUND, response);
+    }
+    return true;
   }
 
   /**
@@ -136,13 +236,14 @@ public class SwipeServer extends HttpServlet {
    * @param urlPath path of the url in string
    * @return boolean indicator
    */
-  private boolean isUrlValid(String urlPath) {
+  private boolean isPostUrlValid(String urlPath) {
     // validate the request url path according to the API spec
-    if (!urlPath.equals(URL_LEFT) && !urlPath.equals(URL_RIGHT)){
-      return false;
+    if (urlPath.equals(URL_LEFT) || urlPath.equals(URL_RIGHT)){
+      return true;
     }
-    return true;
+    return false;
   }
+
 
   /**
    * doPost method, convert the request body from json object to SwipeDetail class object
@@ -157,7 +258,7 @@ public class SwipeServer extends HttpServlet {
     response.setContentType("application/json");
     String urlPath = request.getPathInfo();
     // check for valid url
-    if (urlPath == null || urlPath.isEmpty() || !isUrlValid(urlPath)) {
+    if (urlPath == null || urlPath.isEmpty() || !isPostUrlValid(urlPath)) {
       this.replyMsg(ERROR_URL, HttpServletResponse.SC_NOT_FOUND, response);
       return;
     }
@@ -200,15 +301,13 @@ public class SwipeServer extends HttpServlet {
       }
 
       // prepare the message to RabbitMQ and required info
-      //ByteBuffer buffer = ByteBuffer.allocate(8);
-      //buffer.putInt(swiperId);
-      //buffer.putInt(swipeeId);
       String messages = swipeDetail.getSwiper() + ":"+swipeDetail.getSwipee();
       String swipeDirection = request.getPathInfo().substring(1);
 
       // borrow channel and publish the message
       Channel channel = this.channelPool.borrowObject();
-      channel.basicPublish(EXCHANGE_NAME, swipeDirection, null, messages.getBytes());
+      // publish the message with MessageProperties set to persistent type
+      channel.basicPublish(EXCHANGE_NAME, swipeDirection, true, MessageProperties.PERSISTENT_TEXT_PLAIN, messages.getBytes());
       this.channelPool.returnObject(channel);
 
       // Send the response back to client
