@@ -10,6 +10,9 @@ import java.io.IOException;
  * rabbitmq.ConsumerThread for creating a thread connecting to RabbitMQ
  */
 public class ConsumerThread implements Runnable{
+  protected static final String PREFIX_LIKES_CNT = "Likes:";
+  protected static final String PREFIX_DISLIKES_CNT = "Dislikes:";
+  protected static final String PREFIX_SWIPE_REC = "Swiper:";
   protected Channel channel;
   protected String queueName;
 
@@ -40,11 +43,11 @@ public class ConsumerThread implements Runnable{
   public static Channel setChannel(Connection connection, String exchangeName, String exchangeType,
       String queueName, String[] bindingKeys) throws IOException {
     Channel channel = connection.createChannel();
-    channel.exchangeDeclare(exchangeName, exchangeType);
+    channel.exchangeDeclare(exchangeName, exchangeType, true);
     // queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String,Object> arguments)
-    // If queue with queueName not yet exist, create a non-durable (second argument), non-exclusive (third argument)
+    // If queue with queueName not yet exist, create a durable (second argument), non-exclusive (third argument)
     // non-autoDelete (fourth argument) queue
-    channel.queueDeclare(queueName, false, false, false, null);
+    channel.queueDeclare(queueName, true, false, false, null);
     // Create a binding between the queue and the exchange, using the binding keys
     for(String bindKey:bindingKeys){
       channel.queueBind(queueName, exchangeName, bindKey);

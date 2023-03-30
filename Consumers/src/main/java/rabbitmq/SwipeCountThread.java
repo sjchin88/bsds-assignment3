@@ -15,6 +15,7 @@ import java.util.logging.Logger;
 public class SwipeCountThread extends ConsumerThread{
   private BlockingQueue<String> buffer;
 
+
   /**
    * Create a new thread to record the like and dislike
    * @param connection  RabbitMQ connection
@@ -46,9 +47,9 @@ public class SwipeCountThread extends ConsumerThread{
       try {
         String swiperId="";
         if (delivery.getEnvelope().getRoutingKey().equals("right")) {
-          swiperId = "Likes:" + messages[0];
+          swiperId = PREFIX_LIKES_CNT + messages[0];
         } else {
-          swiperId = "DisLikes:" + messages[0];
+          swiperId = PREFIX_DISLIKES_CNT + messages[0];
         }
         this.buffer.put(swiperId);
       }

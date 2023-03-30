@@ -39,7 +39,7 @@ public class SwipeRecThread extends ConsumerThread{
 
     DeliverCallback deliverCallback = (consumerTag, delivery) -> {
       String[] messages = new String(delivery.getBody(), "UTF-8").split(":");
-      messages[1] = "Swiper:"+messages[0];
+      messages[0] = PREFIX_SWIPE_REC +messages[0];
       try {
         //use put to ensure always try to put the messages
         this.buffer.put(messages);

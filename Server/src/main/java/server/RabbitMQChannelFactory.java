@@ -40,7 +40,8 @@ public class RabbitMQChannelFactory extends BasePooledObjectFactory<Channel> {
   synchronized public Channel create() throws IOException {
     this.channelCount++;
     Channel channel = this.rmqConnection.createChannel();
-    channel.exchangeDeclare(EXCHANGE_NAME,"direct");
+    // third argument is always the durable boolean, set it true so exchange will survive node restart
+    channel.exchangeDeclare(EXCHANGE_NAME,"direct", true);
     return channel;
   }
 

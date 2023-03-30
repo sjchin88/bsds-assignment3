@@ -15,10 +15,13 @@ public class Recorder {
    * Default number of thread
    */
   protected static final int NUM_THREAD = 20;
+  protected static final int NUM_REDDIS_THREAD = 3;
+  protected static final int BUFFER_SIZE = 500_000;
   /**
    * Default server address
    */
-  protected static String SERVER_ADDR = "localhost";
+  protected static String RABBIT_HOST = "localhost";
+  //protected static String SERVER_ADDR = "35.165.32.0";
   //protected static String ADMIN_NAME = "csj";
   //protected static String ADMIN_PASS = "Gu33ssm3";
 
