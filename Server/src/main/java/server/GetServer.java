@@ -49,8 +49,8 @@ public class GetServer extends HttpServlet {
   private static final int SWIPER_UPPER = 5000;
 
   private Gson gson;
-  private static final String REDIS_HOST = "redis://127.0.0.1:6379";
-  //private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
+  //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
+  private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
   private static final String PREFIX_LIKES_CNT = "Likes:";
   private static final String PREFIX_DISLIKES_CNT = "Dislikes:";
   private static final String PREFIX_SWIPE_REC = "Swiper:";

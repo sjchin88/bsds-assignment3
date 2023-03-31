@@ -21,7 +21,7 @@ public class RedisSwipeRecThread extends RedisConsumerThread {
       List<RedisFuture<Long>> futureList = new ArrayList<>();
       while(true) {
         for(int i = 0; i < BATCH_SIZE; i++){
-          String[] swipes = this.buffer.poll(100, TimeUnit.MILLISECONDS);
+          String[] swipes = this.buffer.poll(200, TimeUnit.MILLISECONDS);
           if(swipes!=null){
             RedisFuture<Long> future = this.redCommand.sadd(swipes[0], swipes[1]);
             futureList.add(future);
@@ -29,8 +29,13 @@ public class RedisSwipeRecThread extends RedisConsumerThread {
             break;
           }
         }
-        this.redConnection.flushCommands();
-        LettuceFutures.awaitAll(100, TimeUnit.MILLISECONDS, futureList.toArray(new RedisFuture[futureList.size()]));
+        // If the list is not empty
+        if(futureList.size()!=0){
+          this.redConnection.flushCommands();
+          LettuceFutures.awaitAll(200, TimeUnit.MILLISECONDS, futureList.toArray(new RedisFuture[futureList.size()]));
+        }
+        // Clear the list at the end
+        futureList.clear();
       }
     } catch (InterruptedException e) {
       System.out.println("Reddis interrupt exception");
