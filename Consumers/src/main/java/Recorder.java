@@ -21,7 +21,7 @@ public class Recorder {
    */
   protected static final int NUM_THREAD = 20;
   protected static final int NUM_REDDIS_THREAD = 3;
-  protected static final int PREFETCH_COUNT = 1;
+  protected static final int PREFETCH_COUNT = 20;
   protected static final int BUFFER_SIZE = 500_000;
   /**
    * Default server address
