@@ -70,11 +70,11 @@ public class SwipeServer extends HttpServlet {
   /**
    * Upper bound limit for swiper id
    */
-  private static final int SWIPER_UPPER = 5000;
+  private static final int SWIPER_UPPER = 50_000;
   /**
    * Upper bound limit for swipee id
    */
-  private static final int SWIPEE_UPPER = 1_000_000;
+  private static final int SWIPEE_UPPER = 50_000;
 
   /**
    * number of channels to connect to RabbitMQ server

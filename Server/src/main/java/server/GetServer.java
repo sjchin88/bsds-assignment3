@@ -46,7 +46,7 @@ public class GetServer extends HttpServlet {
   /**
    * Upper bound limit for swiper id
    */
-  private static final int SWIPER_UPPER = 5000;
+  private static final int SWIPER_UPPER = 50_000;
 
   private Gson gson;
   //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
