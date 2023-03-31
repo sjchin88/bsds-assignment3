@@ -69,6 +69,7 @@ public class GetClient extends ApacheAsyncClient {
       // and wait until response is received
       HttpResponse response = future.get();
       long end = System.currentTimeMillis();
+      System.out.println(response.toString());
       int statusCode = response.getCode();
       long[] record = new long[]{start, end, statusCode};
       this.memoryBuffer.put(record);

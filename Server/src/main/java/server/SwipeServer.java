@@ -89,15 +89,15 @@ public class SwipeServer extends HttpServlet {
   /**
    * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
    */
-  //private static String RABBIT_HOST = "localhost";
-  private static String RABBIT_HOST = "35.165.32.0";
-  private static String RABBIT_USER = "csj";
-  private static String RABBIT_PASS = "Gu33ssm3";
+  private static String RABBIT_HOST = "localhost";
+  //private static String RABBIT_HOST = "35.165.32.0";
+  //private static String RABBIT_USER = "csj";
+  //private static String RABBIT_PASS = "Gu33ssm3";
   private ConnectionFactory rabbitFactory;
   private RabbitMQChannelPool channelPool;
   private Gson gson;
-  //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
-  private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
+  private static final String REDIS_HOST = "redis://127.0.0.1:6379";
+  //private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
   private static final String PREFIX_LIKES_CNT = "Likes:";
   private static final String PREFIX_DISLIKES_CNT = "Dislikes:";
   private static final String PREFIX_SWIPE_REC = "Swiper:";
@@ -115,8 +115,8 @@ public class SwipeServer extends HttpServlet {
     // Create new connection to the rabbit MQ
     this.rabbitFactory = new ConnectionFactory();
     this.rabbitFactory.setHost(RABBIT_HOST);
-    this.rabbitFactory.setUsername(RABBIT_USER);
-    this.rabbitFactory.setPassword(RABBIT_PASS);
+    //this.rabbitFactory.setUsername(RABBIT_USER);
+    //this.rabbitFactory.setPassword(RABBIT_PASS);
     Connection rabbitMQConn;
     try {
       rabbitMQConn = this.rabbitFactory.newConnection();
@@ -131,104 +131,6 @@ public class SwipeServer extends HttpServlet {
 
     // Initialized other instance variable
     this.gson = new Gson();
-
-    //Initialized the Redis connection
-    this.redisClient = RedisClient.create(REDIS_HOST);
-    this.redisConnection = this.redisClient.connect();
-    //Create asynchronous API
-    this.redisCommand = this.redisConnection.async();
-  }
-
-  /**
-   * doGet method, currently return one line statement only as the assignment request to implement
-   * post method only
-   * @param request valid http request
-   * @param response http response
-   * @throws ServletException
-   * @throws IOException
-   */
-  @Override
-  protected void doGet(HttpServletRequest request, HttpServletResponse response)
-      throws ServletException, IOException {
-    response.setContentType("application/json");
-    String urlPath = request.getPathInfo();
-
-    // check for valid url
-    if (isGetUrlValid(urlPath, response)) {
-      if(urlPath.matches(URL_MATCH)){
-        this.getPotentialMatches(response, urlPath.substring(9));
-      } else if (urlPath.matches(URL_STAT)){
-        this.getStat(response, urlPath.substring(9));
-      }
-    }
-  }
-
-
-  /**
-   * Retrieve
-   * @param response
-   * @param swiperId
-   */
-  private void getPotentialMatches(HttpServletResponse response, String swiperId) {
-    try{
-      RedisFuture<List<String>> swipeeSet = this.redisCommand.srandmember(PREFIX_SWIPE_REC+swiperId, 100);
-      JsonObject jsonObject = new JsonObject();
-      JsonArray jsonArray = this.gson.toJsonTree(swipeeSet.get()).getAsJsonArray();
-      jsonObject.add("matchList", jsonArray);
-      response.setStatus(HttpServletResponse.SC_OK);
-      response.getOutputStream().print(this.gson.toJson(jsonObject));
-      response.getOutputStream().flush();
-    } catch (IOException | ExecutionException | InterruptedException e) {
-      Logger.getLogger("Get From Redis").log(Level.WARNING, "Error processing request", e);
-    }
-  }
-
-  private void getStat(HttpServletResponse response, String swiperId) throws IOException {
-    try{
-      //System.out.println(swiperId);
-      RedisFuture<String> likeCount = this.redisCommand.get(PREFIX_LIKES_CNT+swiperId);
-      RedisFuture<String> dislikeCount = this.redisCommand.get(PREFIX_DISLIKES_CNT+swiperId);
-      //System.out.println(dislikeCount.get());
-      JsonObject jsonObject = new JsonObject();
-      int likes = likeCount.get() != null ? Integer.valueOf(likeCount.get()) : 0;
-      int dislikes = dislikeCount.get() != null ? Integer.valueOf(dislikeCount.get()) : 0;
-      jsonObject.addProperty("numLikes", likes );
-      jsonObject.addProperty("numDislikes",dislikes);
-      response.setStatus(HttpServletResponse.SC_OK);
-      response.getOutputStream().print(this.gson.toJson(jsonObject));
-      response.getOutputStream().flush();
-    } catch (IOException | ExecutionException | InterruptedException e) {
-      Logger.getLogger("Get From Redis").log(Level.WARNING, "Error processing request", e);
-    }
-  }
-
-  /**
-   * Check if the urlPath is valid for Get call
-   *
-   * @param urlPath
-   * @param response
-   * @return boolean
-   */
-  private boolean isGetUrlValid(String urlPath, HttpServletResponse response) throws IOException {
-    if (urlPath == null || urlPath.isEmpty()) {
-      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
-      return false;
-    }
-    int swiperId = -1;
-    try{
-      if(urlPath.matches(URL_MATCH)){
-        swiperId = Integer.valueOf(urlPath.substring(9));
-      } else if(urlPath.matches(URL_STAT)){
-        swiperId = Integer.valueOf(urlPath.substring(7));
-      }
-    } catch (Exception e){
-      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
-      return false;
-    }
-    if(!validateSwiper(swiperId)) {
-      this.replyMsg(ERROR_USER, HttpServletResponse.SC_NOT_FOUND, response);
-    }
-    return true;
   }
 
   /**
