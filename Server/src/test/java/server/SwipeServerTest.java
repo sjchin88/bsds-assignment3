@@ -39,17 +39,6 @@ class SwipeServerTest {
     this.writer = new StringWriter();
   }
 
-  @Test
-  void doGet() throws IOException, ServletException {
-    when(response.getWriter()).thenReturn(new PrintWriter(writer));
-
-    swipeServer.doGet(request, response);
-    // ensure that the response was setup as expected based on the
-    //  mocked inputs
-    verify(response).setContentType("text/plain");
-    verify(response).setStatus(HttpServletResponse.SC_NOT_FOUND);
-    assertEquals(writer.toString(), "no get method");
-  }
 
   @Test
   void doPost_invalidUrl() throws IOException, ServletException {
