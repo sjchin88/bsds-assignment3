@@ -25,9 +25,15 @@ public class SwipeRecThread extends ConsumerThread{
    * @param buffer  an instance of Redis Command async() api
    * @throws IOException
    */
-  public SwipeRecThread(Connection connection, String exchangeName,
-      String exchangeType, String queueName, String[] bindingKeys, BlockingQueue<String[]> buffer) throws IOException {
-    super(connection, exchangeName, exchangeType, queueName, bindingKeys);
+  public SwipeRecThread(
+      Connection connection,
+      String exchangeName,
+      String exchangeType,
+      String queueName,
+      String[] bindingKeys,
+      BlockingQueue<String[]> buffer,
+      int preFetchCount) throws IOException {
+    super(connection, exchangeName, exchangeType, queueName, bindingKeys, preFetchCount);
     this.buffer = buffer;
   }
 
@@ -44,13 +50,14 @@ public class SwipeRecThread extends ConsumerThread{
         //use put to ensure always try to put the messages
         this.buffer.put(messages);
       } catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        System.out.println("Rabbit interrupt exception");
       }
     };
     try {
       this.channel.basicConsume(this.queueName, true, deliverCallback, consumerTag -> { });
     } catch (IOException e) {
       Logger.getLogger(SwipeRecThread.class.getName()).log(Level.WARNING, "channel subscription fail", e);
+      System.out.println("channel subscription fail");
     }
   }
 }

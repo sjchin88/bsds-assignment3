@@ -1,6 +1,7 @@
 import java.util.concurrent.CountDownLatch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import utility.Counter;
 
 class HttpClientTest {
 

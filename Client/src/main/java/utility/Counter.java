@@ -1,3 +1,5 @@
+package utility;
+
 /**
  * Represent a counter storing the countSuccess and countFailure,
  * and control its incrementation in synchronized manner
@@ -8,7 +10,7 @@ public class Counter {
   private int sendCount;
 
   /**
-   * Initialize a new Counter object
+   * Initialize a new utility.Counter object
    */
   public Counter() {
     this.countSuccess = 0;

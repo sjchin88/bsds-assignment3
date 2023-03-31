@@ -89,10 +89,10 @@ public class SwipeServer extends HttpServlet {
   /**
    * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
    */
-  private static String RABBIT_HOST = "localhost";
-  //private static String SERVER_ADDR = "35.165.32.0";
-  //private static String RABBIT_USER = "csj";
-  //private static String RABBIT_PASS = "Gu33ssm3";
+  //private static String RABBIT_HOST = "localhost";
+  private static String RABBIT_HOST = "35.165.32.0";
+  private static String RABBIT_USER = "csj";
+  private static String RABBIT_PASS = "Gu33ssm3";
   private ConnectionFactory rabbitFactory;
   private RabbitMQChannelPool channelPool;
   private Gson gson;
@@ -115,8 +115,8 @@ public class SwipeServer extends HttpServlet {
     // Create new connection to the rabbit MQ
     this.rabbitFactory = new ConnectionFactory();
     this.rabbitFactory.setHost(RABBIT_HOST);
-    //this.rabbitFactory.setUsername(RABBIT_USER);
-    //this.rabbitFactory.setPassword(RABBIT_PASS);
+    this.rabbitFactory.setUsername(RABBIT_USER);
+    this.rabbitFactory.setPassword(RABBIT_PASS);
     Connection rabbitMQConn;
     try {
       rabbitMQConn = this.rabbitFactory.newConnection();
@@ -185,7 +185,7 @@ public class SwipeServer extends HttpServlet {
 
   private void getStat(HttpServletResponse response, String swiperId) throws IOException {
     try{
-      System.out.println(swiperId);
+      //System.out.println(swiperId);
       RedisFuture<String> likeCount = this.redisCommand.get(PREFIX_LIKES_CNT+swiperId);
       RedisFuture<String> dislikeCount = this.redisCommand.get(PREFIX_DISLIKES_CNT+swiperId);
       //System.out.println(dislikeCount.get());

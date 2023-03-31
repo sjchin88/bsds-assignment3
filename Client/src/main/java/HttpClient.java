@@ -7,6 +7,7 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import org.apache.commons.lang3.RandomStringUtils;
+import utility.Counter;
 
 /**
  * HttpClient class implements Runnable for part II,
@@ -39,7 +40,7 @@ public class HttpClient implements Runnable{
    * @param url url destination of the server
    * @param numRequest  number of request to be send
    * @param countDownLatch  countDownLatch to manage concurrency
-   * @param counter   Counter object used to sum the count of success and unsuccess requests across threads
+   * @param counter   utility.Counter object used to sum the count of success and unsuccess requests across threads
    */
   public HttpClient(String url, Integer numRequest, CountDownLatch countDownLatch, Counter counter) {
     this.url = url;
