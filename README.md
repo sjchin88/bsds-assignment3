@@ -13,10 +13,10 @@
     <img src="images/logo.png" alt="Logo" width="80" height="80">
   </a>-->
 
-  <h1 align="center">Building Scalable Distribution System Assignment 2</h1>
+  <h1 align="center">Building Scalable Distribution System Assignment 3</h1>
 
   <p align="center">
-    Codes for completing Assignment 2
+    Codes for completing Assignment 3
   </p>
 </div>
 
@@ -55,7 +55,7 @@
 
 <!--[![Product Name Screen Shot][product-screenshot]](https://example.com)-->
 
-This project deploy a servlet server on Tomcat 9 on AWS EC2 instance. The server act as producer(publisher) when receiving incoming HTTP requests, connect to RabbitMQ hosted on another EC2 instance, with the consumers program running on the third EC2 instance. 
+This project deploy a servlet server on Tomcat 9 on AWS EC2 instance. The server act as producer(publisher) when receiving incoming HTTP requests, connect to RabbitMQ hosted on another EC2 instance, with the consumers program running on the third EC2 instance. The consumers will write the swipe data into redis-server hosted on the same EC2 instance. The redis server will serve get request as well routed from the GetServer
 The client program provide a way to load test the whole server set up (servlet server, RabbitMQ server and the consumer).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -75,9 +75,9 @@ The client program provide a way to load test the whole server set up (servlet s
 #### Main Tools 
 | Main Tool      | Description of Usage |
 | ----------- | ----------- |
-| AWS Application Load Balancer | For testing the server with two instances |
 | AWS | Cloud computing platform |
 | RabbitMQ | Message Broker |
+| Redis | for database service |
 | Tomcat 9 | for deploying the server servlet |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -90,11 +90,12 @@ You can run the backend on your local machine or deploy to AWS for testing.
 ### Local Set Up Guide
 
 1. Install and deploy RabbitMQ
-2. Change the server address to localhost in the servlet and consumers program. 
-3. Run the consumers program. 
-4. Deploy the server program into Tomcat 9 on intellij
-5. Change the server address in the client program to localhost:8080. 
-6. Select any of the client configuration and run it. 
+2. Install and deploy Redis
+3. Change the server address to localhost in the servlet and consumers program. 
+4. Run the consumers program. 
+5. Deploy the server program into Tomcat 9 on intellij
+6. Change the server address in the client program to localhost:8080. 
+7. Run the client
 
 ### AWS Set Up Guide
 
@@ -103,10 +104,12 @@ You can run the backend on your local machine or deploy to AWS for testing.
 declaring exchange, creating connection and channels, declaring queue etc. 
 3. Change the server address of the servlet and consumers program to the IP address of EC2 instance (of the RabbitMQ). 
 4. Add Username and password details. 
-5. Package the consumers program into separate jar file. Upload it to one EC2 instance. And run both programs. 
-6. Package the servlet into the standard war file. Upload it to the EC2 instance with Tomcat server installed. 
-7. Change the server address in the client program to the IP address of EC2 instance with Tomcat server installed. 
-8. Select any of the client configuration and run it.
+5. Install Redis on the second EC2 instance (recommend to associate with an elastic IP address)
+6. Change the redis_host address of the GetServer servlet and consumers program to where Redis is installed. 
+7. Package the consumers program into separate jar file. Upload it to the same EC2 instance with Redis. And run both programs. 
+8. Package the servlet into the standard war file. Upload it to the EC2 instance with Tomcat server installed. 
+9. Change the server address in the client program to the IP address of EC2 instance with Tomcat server installed. 
+10. Run the client
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -117,11 +120,13 @@ declaring exchange, creating connection and channels, declaring queue etc.
 
 ### Useful commands
 After deploying the consumer program as executable jar file into EC2 instance, you can specify 
-1. The number of threads as first command-line argument provided when running the jar file.
-2. The server address as second command-line argument provided when running the jar file. 
-Example java -jar consumers-like.jar 20 172.22.22.135 will run the consumers-like.jar program with 20 threads and server address of 172.22.22.135
-Note you cannot skip the first argument if you want to specify the server address using second argument. 
-If you dont specify the arguments, the default value will be 10 threads and the server address you set up in the original program. 
+1. The number of consumer threads as first command-line argument provided when running the jar file.
+2. The number of write-to-redis threads as second command-line argument provided when running the jar file.
+3. The number of prefetch count limit from RabbitMQ as third command-line argument provided when running the jar file.
+Example java -jar consumers-like.jar 20 3 20 will run the consumers-like.jar program with 20 threads, 3 threads to write to Redis DB, and 20 messages maximum
+from the RabbitMQ. 
+Note you cannot skip the previous argument(s) if you want to specify the second or third argument. 
+If you dont specify the arguments, the default value will be 20 threads, 3 to redis, and 20 as prefetch limit
 
 
 
