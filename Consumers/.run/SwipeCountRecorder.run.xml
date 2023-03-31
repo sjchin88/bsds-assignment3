@@ -2,6 +2,7 @@
   <configuration default="false" name="SwipeCountRecorder" type="Application" factoryName="Application">
     <option name="MAIN_CLASS_NAME" value="SwipeCountRecorder" />
     <module name="consumers" />
+    <option name="PROGRAM_PARAMETERS" value="20 3 100" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

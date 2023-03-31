@@ -89,15 +89,15 @@ public class SwipeServer extends HttpServlet {
   /**
    * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
    */
-  //private static String RABBIT_HOST = "localhost";
-  private static String RABBIT_HOST = "35.165.32.0";
-  private static String RABBIT_USER = "csj";
-  private static String RABBIT_PASS = "Gu33ssm3";
+  private static String RABBIT_HOST = "localhost";
+  //private static String RABBIT_HOST = "35.165.32.0";
+  //private static String RABBIT_USER = "csj";
+  //private static String RABBIT_PASS = "Gu33ssm3";
   private ConnectionFactory rabbitFactory;
   private RabbitMQChannelPool channelPool;
   private Gson gson;
-  //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
-  private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
+  private static final String REDIS_HOST = "redis://127.0.0.1:6379";
+  //private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
   private static final String PREFIX_LIKES_CNT = "Likes:";
   private static final String PREFIX_DISLIKES_CNT = "Dislikes:";
   private static final String PREFIX_SWIPE_REC = "Swiper:";
@@ -115,8 +115,8 @@ public class SwipeServer extends HttpServlet {
     // Create new connection to the rabbit MQ
     this.rabbitFactory = new ConnectionFactory();
     this.rabbitFactory.setHost(RABBIT_HOST);
-    this.rabbitFactory.setUsername(RABBIT_USER);
-    this.rabbitFactory.setPassword(RABBIT_PASS);
+    //this.rabbitFactory.setUsername(RABBIT_USER);
+    //this.rabbitFactory.setPassword(RABBIT_PASS);
     Connection rabbitMQConn;
     try {
       rabbitMQConn = this.rabbitFactory.newConnection();

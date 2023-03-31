@@ -31,7 +31,7 @@ public class ApacheAsyncClientDriver extends ClientDriver{
     final String[] headers = new String[]{"Number of Threads", "Number of requests", "Time taken", "Throughput per second"};
     runRecords.add(headers);
     RecordProcessor recordProcessor = new RecordProcessor();
-    for (int idx = 0; idx < NUMTHREADS_LIST.length; idx++){
+    for (int idx = 0; idx < 2; idx++){
       //Initialize common variables and objects required
       int numthreads = NUMTHREADS_LIST[idx];
       int totalRequests = REQUEST_LIST[idx];
