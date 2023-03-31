@@ -1,3 +1,6 @@
+package apache;
+
+
 import java.util.Random;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -8,34 +11,24 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
-import org.apache.hc.client5.http.nio.AsyncClientConnectionManager;
-import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpResponse;
+import utility.Counter;
 
-public class PoolAsyncSingleClient implements Runnable {
-  protected CloseableHttpAsyncClient httpClient;
-  protected String url;
-  protected Integer numRequest;
+
+public class PostClient extends ApacheAsyncClient {
   protected CountDownLatch countDownLatch;
   // protected String[] comments;
-  protected static final String URL_LEFT = "/left";
-  protected static final String URL_RIGHT = "/right";
-  protected static final int LOWER_BOUND = 0;
-  protected static final int SWIPER_UPPER = 5_001;
-  protected static final int SWIPEE_UPPER = 1_000_001;
+  protected static final String URL_LEFT = "/swipe/left";
+  protected static final String URL_RIGHT = "/swipe/right";
   protected static final int VALID_RESPONSECODE = 201;
   protected static final int SEND_LIMIT = 5;
   protected int countSuccess;
   protected int countFailure;
   protected Counter counter;
-  protected Random random;
   protected RandomStringUtils randomStringUtils;
-  protected BlockingQueue<long[]> memoryBuffer;
 
-  public PoolAsyncSingleClient(String url,
+  public PostClient(String url,
       CloseableHttpAsyncClient httpClient,
       Integer numRequest, CountDownLatch countDownLatch, Counter counter,
       BlockingQueue<long[]> memoryBuffer) {
@@ -66,16 +59,6 @@ public class PoolAsyncSingleClient implements Runnable {
     sb.append(this.randomStringUtils.randomAlphabetic(256));
     sb.append("\"}");
     return sb.toString();
-  }
-
-  /**
-   * Get a random number in string based on limit
-   *
-   * @param limit  int limit (exclusive)
-   * @return random number in string
-   */
-  public String getRandomNum(int limit){
-    return String.valueOf(random.nextInt(limit));
   }
 
   /**

@@ -28,10 +28,10 @@ public class SwipeCountThread extends ConsumerThread{
    */
   public SwipeCountThread(Connection connection, String exchangeName,
       String exchangeType, String queueName, String[] bindingKeys,
-      BlockingQueue<String> buffer
+      BlockingQueue<String> buffer, int preFetchCount
       )
       throws IOException {
-    super(connection, exchangeName, exchangeType, queueName, bindingKeys);
+    super(connection, exchangeName, exchangeType, queueName, bindingKeys, preFetchCount);
     this.buffer = buffer;
   }
 
@@ -54,7 +54,7 @@ public class SwipeCountThread extends ConsumerThread{
         this.buffer.put(swiperId);
       }
       catch (InterruptedException e) {
-        throw new RuntimeException(e);
+        System.out.println("Rabbit interrupt exception");
       }
 
     };
@@ -62,6 +62,7 @@ public class SwipeCountThread extends ConsumerThread{
       this.channel.basicConsume(this.queueName, true, deliverCallback, consumerTag -> { });
     } catch (IOException e) {
       Logger.getLogger(SwipeRecThread.class.getName()).log(Level.WARNING, "channel subscription fail", e);
+      System.out.println("channel subscription fail");
     }
   }
 }

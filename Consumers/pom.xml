@@ -63,7 +63,7 @@
         <version>3.3.0</version>
         <executions>
           <execution>
-            <id>swiperecorder</id>
+            <id>swipeCountRecorder</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
@@ -76,12 +76,12 @@
                   <mainClass>SwipeCountRecorder</mainClass>
                 </transformer>
               </transformers>
-              <finalName>${project.artifactId}-swipe</finalName>
+              <finalName>CountRecorder</finalName>
             </configuration>
           </execution>
 
           <execution>
-            <id>likerecorder</id>
+            <id>swipeRec</id>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
@@ -94,7 +94,7 @@
                   <mainClass>SwipeRecRecorder</mainClass>
                 </transformer>
               </transformers>
-              <finalName>${project.artifactId}-like</finalName>
+              <finalName>SwipeRecorder</finalName>
             </configuration>
           </execution>
         </executions>

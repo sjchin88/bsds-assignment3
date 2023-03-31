@@ -33,7 +33,7 @@ public class RedisSwipeCountThread extends RedisConsumerThread{
         LettuceFutures.awaitAll(100, TimeUnit.MILLISECONDS, futureList.toArray(new RedisFuture[futureList.size()]));
       }
     } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+      System.out.println("Reddis interrupt exception");
     }
   }
 }

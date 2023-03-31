@@ -34,21 +34,18 @@ public class SwipeCountRecorder extends Recorder{
     } catch (Exception e){
       numReddisThread = NUM_REDDIS_THREAD;
     }
-    String serverAddr;
+    int prefetchCount;
     try{
-      serverAddr = argv[2];
+      prefetchCount = Integer.valueOf(argv[2]);
     } catch (Exception e){
-      serverAddr = RABBIT_HOST;
+      prefetchCount = PREFETCH_COUNT;
     }
-    ConnectionFactory factory = new ConnectionFactory();
-    factory.setHost(serverAddr);
-    //factory.setUsername(ADMIN_NAME);
-    //factory.setPassword(ADMIN_PASS);
-    Connection connection = factory.newConnection();
 
+    Connection rabbitConnection = createConnection();
     BlockingQueue<String> buffer = new LinkedBlockingDeque<>(BUFFER_SIZE);
+
     for(int i = 0; i < numThread; i++){
-      Thread thread = new Thread(new SwipeCountThread(connection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, buffer));
+      Thread thread = new Thread(new SwipeCountThread(rabbitConnection, EXCHANGE_NAME, EXCHANGE_TYPE, QUEUE_NAME, BINDING_KEYS, buffer, prefetchCount));
       thread.start();
     }
     for(int i = 0; i < numReddisThread; i++){

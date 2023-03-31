@@ -25,8 +25,8 @@ public class ConsumerThread implements Runnable{
    * @param bindingKeys   binding keys
    */
   public ConsumerThread(Connection connection, String exchangeName, String exchangeType,
-      String queueName, String[] bindingKeys) throws IOException {
-    this.channel = setChannel(connection, exchangeName, exchangeType, queueName, bindingKeys);
+      String queueName, String[] bindingKeys, int preFetchCount) throws IOException {
+    this.channel = setChannel(connection, exchangeName, exchangeType, queueName, bindingKeys, preFetchCount);
     this.queueName = queueName;
   }
 
@@ -41,7 +41,7 @@ public class ConsumerThread implements Runnable{
    * @throws IOException when creating the channel
    */
   public static Channel setChannel(Connection connection, String exchangeName, String exchangeType,
-      String queueName, String[] bindingKeys) throws IOException {
+      String queueName, String[] bindingKeys, int preFetchCount) throws IOException {
     Channel channel = connection.createChannel();
     channel.exchangeDeclare(exchangeName, exchangeType, true);
     // queueDeclare(String queue, boolean durable, boolean exclusive, boolean autoDelete, Map<String,Object> arguments)
@@ -52,7 +52,7 @@ public class ConsumerThread implements Runnable{
     for(String bindKey:bindingKeys){
       channel.queueBind(queueName, exchangeName, bindKey);
     }
-    channel.basicQos(1);
+    channel.basicQos(preFetchCount);
     return channel;
   }
 
