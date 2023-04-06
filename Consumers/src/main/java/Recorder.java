@@ -26,16 +26,16 @@ public class Recorder {
   /**
    * Default server address
    */
-  //protected static String RABBIT_HOST = "localhost";
-  protected static String RABBIT_HOST = "35.165.32.0";
-  protected static String ADMIN_NAME = "csj";
-  protected static String ADMIN_PASS = "Gu33ssm3";
+  protected static String RABBIT_HOST = "localhost";
+  //protected static String RABBIT_HOST = "35.165.32.0";
+  //protected static String ADMIN_NAME = "csj";
+  //protected static String ADMIN_PASS = "Gu33ssm3";
 
   public static Connection createConnection() throws IOException, TimeoutException {
     ConnectionFactory factory = new ConnectionFactory();
     factory.setHost(RABBIT_HOST);
-    factory.setUsername(ADMIN_NAME);
-    factory.setPassword(ADMIN_PASS);
+    //factory.setUsername(ADMIN_NAME);
+    //factory.setPassword(ADMIN_PASS);
     return factory.newConnection();
   }
 }

@@ -1,4 +1,4 @@
-package server;
+package shared.utilities;
 
 /**
  * Class for SwipeResponse

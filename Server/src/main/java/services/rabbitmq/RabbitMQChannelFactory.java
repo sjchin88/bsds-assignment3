@@ -1,8 +1,10 @@
-package server;
+package services.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 import org.apache.commons.pool2.BasePooledObjectFactory;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -17,8 +19,16 @@ public class RabbitMQChannelFactory extends BasePooledObjectFactory<Channel> {
    * Default exchange_name used by the channels
    */
   private static final String EXCHANGE_NAME = "swipes";
+  /**
+   * Address of the RabbitMQ server, change it to IP address when hosting on EC-2
+   */
+  private static String RABBIT_HOST = "localhost";
+  //private static String RABBIT_HOST = "35.165.32.0";
+  //private static String RABBIT_USER = "csj";
+  //private static String RABBIT_PASS = "Gu33ssm3";
+  private ConnectionFactory rabbitFactory;
   // Connection for RMQ
-  private final Connection rmqConnection;
+  private Connection rmqConnection;
   private int channelCount;
 
 
@@ -28,6 +38,26 @@ public class RabbitMQChannelFactory extends BasePooledObjectFactory<Channel> {
    */
   public RabbitMQChannelFactory(Connection rmqConnection) {
     this.rmqConnection = rmqConnection;
+    this.channelCount = 0;
+  }
+
+  /**
+   * Create new RabbitMQ channel factory based on default connection setting
+   */
+  public RabbitMQChannelFactory() {
+    // Create new connection to the rabbit MQ
+    this.rabbitFactory = new ConnectionFactory();
+    //this.rabbitFactory.setHost(RABBIT_HOST);
+    //this.rabbitFactory.setUsername(RABBIT_USER);
+    //this.rabbitFactory.setPassword(RABBIT_PASS);
+    Connection rabbitMQConn;
+    try {
+      rabbitMQConn = this.rabbitFactory.newConnection();
+      System.out.println("INFO: RabbitMQ connection established");
+    } catch (IOException | TimeoutException e) {
+      throw new RuntimeException(e);
+    }
+    this.rmqConnection = rabbitMQConn;
     this.channelCount = 0;
   }
 

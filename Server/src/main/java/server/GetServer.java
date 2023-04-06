@@ -1,12 +1,7 @@
 package server;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import io.lettuce.core.RedisClient;
-import io.lettuce.core.RedisFuture;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -17,46 +12,12 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import services.redis.RedisService;
 
 @WebServlet(name = "GetServlet", value = "/*")
-public class GetServer extends HttpServlet {
-  private static final String URL_MATCH = "^/matches/\\d+";
-  private static final String URL_STAT = "^/stats/\\d+";
+public class GetServer extends HttpServlet implements Server {
 
-  /**
-   * Error Message for invalid url
-   */
-  private static final String ERROR_URL = "invalid url";
-
-  /**
-   * Error Message for invalid inputs
-   */
-  private static final String ERROR_INPUT = "Invalid Input";
-
-  /**
-   * Error Message for invalid swiper
-   */
-  private static final String ERROR_USER = "User not found";
-
-  /**
-   * Lower bound limit for swiper and swipee id
-   */
-  private static final int LOWER_BOUND = 0;
-
-  /**
-   * Upper bound limit for swiper id
-   */
-  private static final int SWIPER_UPPER = 50_000;
-
-  private Gson gson;
-  //private static final String REDIS_HOST = "redis://127.0.0.1:6379";
-  private static final String REDIS_HOST = "redis://foobared2@54.218.18.155:6379";
-  private static final String PREFIX_LIKES_CNT = "Likes:";
-  private static final String PREFIX_DISLIKES_CNT = "Dislikes:";
-  private static final String PREFIX_SWIPE_REC = "Swiper:";
-  private StatefulRedisConnection<String, String> redisConnection;
-  private RedisAsyncCommands<String, String> redisCommand;
-  private RedisClient redisClient;
+  private RedisService redisService;
 
   /**
    * Set up the server class , creating the RabbitMQ channel pool
@@ -66,13 +27,7 @@ public class GetServer extends HttpServlet {
   public void init() throws ServletException {
     super.init();
     // Initialized other instance variable
-    this.gson = new Gson();
-
-    //Initialized the Redis connection
-    this.redisClient = RedisClient.create(REDIS_HOST);
-    this.redisConnection = this.redisClient.connect();
-    //Create asynchronous API
-    this.redisCommand = this.redisConnection.async();
+    this.redisService = new RedisService();
   }
 
   /**
@@ -107,9 +62,9 @@ public class GetServer extends HttpServlet {
    */
   private void getPotentialMatches(HttpServletResponse response, String swiperId) {
     try{
-      RedisFuture<List<String>> swipeeSet = this.redisCommand.srandmember(PREFIX_SWIPE_REC+swiperId, 100);
+      List<String> matches = this.redisService.getMatches(swiperId);
       JsonObject jsonObject = new JsonObject();
-      JsonArray jsonArray = this.gson.toJsonTree(swipeeSet.get()).getAsJsonArray();
+      JsonArray jsonArray = this.gson.toJsonTree(matches).getAsJsonArray();
       jsonObject.add("matchList", jsonArray);
       response.setStatus(HttpServletResponse.SC_OK);
       response.getOutputStream().print(this.gson.toJson(jsonObject));
@@ -121,13 +76,9 @@ public class GetServer extends HttpServlet {
 
   private void getStat(HttpServletResponse response, String swiperId) throws IOException {
     try{
-      //System.out.println(swiperId);
-      RedisFuture<String> likeCount = this.redisCommand.get(PREFIX_LIKES_CNT+swiperId);
-      RedisFuture<String> dislikeCount = this.redisCommand.get(PREFIX_DISLIKES_CNT+swiperId);
-      //System.out.println(dislikeCount.get());
       JsonObject jsonObject = new JsonObject();
-      int likes = likeCount.get() != null ? Integer.valueOf(likeCount.get()) : 0;
-      int dislikes = dislikeCount.get() != null ? Integer.valueOf(dislikeCount.get()) : 0;
+      int likes = this.redisService.getLikesCount(swiperId);
+      int dislikes = this.redisService.getDislikesCount(swiperId);
       jsonObject.addProperty("numLikes", likes );
       jsonObject.addProperty("numDislikes",dislikes);
       response.setStatus(HttpServletResponse.SC_OK);
@@ -147,7 +98,7 @@ public class GetServer extends HttpServlet {
    */
   private boolean isGetUrlValid(String urlPath, HttpServletResponse response) throws IOException {
     if (urlPath == null || urlPath.isEmpty()) {
-      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
+      this.replyMsg(MSG_ERROR_URL, HttpServletResponse.SC_BAD_REQUEST, response);
       return false;
     }
     int swiperId = -1;
@@ -158,40 +109,15 @@ public class GetServer extends HttpServlet {
         swiperId = Integer.valueOf(urlPath.substring(7));
       }
     } catch (Exception e){
-      this.replyMsg(ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
+      this.replyMsg(MSG_ERROR_INPUT, HttpServletResponse.SC_BAD_REQUEST, response);
       return false;
     }
-    if(!validateSwiper(swiperId)) {
-      this.replyMsg(ERROR_USER, HttpServletResponse.SC_NOT_FOUND, response);
+    if(!validateSwipeID(swiperId)) {
+      this.replyMsg(MSG_ERROR_USER, HttpServletResponse.SC_NOT_FOUND, response);
     }
     return true;
   }
 
-  /**
-   * Helper method to send HTTP response using given message and responseCode
-   * @param message response message in string
-   * @param responseCode HTTP response code in int
-   * @param response  HttpServlet Response object
-   * @throws IOException IO exception when writing into the getOutputStream
-   */
-  protected void replyMsg(String message, int responseCode, HttpServletResponse response)
-      throws IOException {
-    SwipeResponse swipeResponse = new SwipeResponse(message);
-    response.setStatus(responseCode);
-    response.getOutputStream().print(this.gson.toJson(swipeResponse));
-    response.getOutputStream().flush();
-  }
 
-  /**
-   * Static method to check if the swiperId is valid
-   * @param swiperId swiperId in int
-   * @return boolean indicate if the swiperId is valid
-   */
-  public static boolean validateSwiper(int swiperId){
-    if(swiperId < LOWER_BOUND || swiperId > SWIPER_UPPER) {
-      return false;
-    } else {
-      return true;
-    }
-  }
+
 }

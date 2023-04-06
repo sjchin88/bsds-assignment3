@@ -6,6 +6,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.async.RedisAsyncCommands;
 import java.util.concurrent.ExecutionException;
 
+//Reference class showing how to use Redis
 public class RedisDB {
   private static final String REDIS_HOST = "redis://127.0.0.1:6379";
   public static void main(String[] args) throws ExecutionException, InterruptedException {

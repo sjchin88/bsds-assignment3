@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 public class RedisSwipeRecThread extends RedisConsumerThread {
   private BlockingQueue<String[]> buffer;
   private static int BATCH_SIZE = 100;
+  private static double DEFAULT_SCORE = 1.0;
 
   public RedisSwipeRecThread(BlockingQueue<String[]> buffer) {
     this.buffer = buffer;
@@ -23,7 +24,7 @@ public class RedisSwipeRecThread extends RedisConsumerThread {
         for(int i = 0; i < BATCH_SIZE; i++){
           String[] swipes = this.buffer.poll(200, TimeUnit.MILLISECONDS);
           if(swipes!=null){
-            RedisFuture<Long> future = this.redCommand.sadd(swipes[0], swipes[1]);
+            RedisFuture<Long> future = this.redCommand.zadd(swipes[0], swipes[1]);
             futureList.add(future);
           } else {
             break;

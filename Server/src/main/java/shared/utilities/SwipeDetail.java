@@ -1,4 +1,4 @@
-package server;
+package shared.utilities;
 
 /**
  * SwipeDetail class to store the swipe information,

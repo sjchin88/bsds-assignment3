@@ -1,4 +1,4 @@
-package server;
+package services.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
@@ -12,10 +12,33 @@ import java.util.logging.Logger;
  * Credit: Ian Gorton, https://github.com/gortonator/foundations-of-scalable-systems/tree/main/Ch7
  */
 public class RabbitMQChannelPool {
+
+  /**
+   * number of channels to connect to RabbitMQ server
+   */
+  private static final int NUM_CHANNELS = 200;
   private final BlockingQueue<Channel> pool;
   private int capacity;
   private RabbitMQChannelFactory factory;
 
+  /**
+   * Construct new RabbitMQ Channel pool based on default settings
+   */
+  public RabbitMQChannelPool(){
+    // Create the required RabbitMQ Channels pool
+    this.factory = new RabbitMQChannelFactory();
+    this.pool = new LinkedBlockingDeque<>(NUM_CHANNELS);
+    this.capacity = NUM_CHANNELS;
+    for(int i = 0; i < capacity; i++){
+      Channel channel;
+      try{
+        channel = factory.create();
+        pool.put(channel);
+      } catch (IOException | InterruptedException e) {
+        Logger.getLogger(RabbitMQChannelPool.class.getName()).log(Level.SEVERE, null, e);
+      }
+    }
+  }
   /**
    * Construct new RabbitMQ Channel Pool based on given parameter
    * @param capacity capacity of the pool
